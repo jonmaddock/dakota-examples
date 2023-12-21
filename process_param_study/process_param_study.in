@@ -1,0 +1,42 @@
+
+# Dakota Input File: rosen_multidim.in
+# Usage:
+#   dakota -i rosen_multidim.in -o rosen_multidim.out > rosen_multidim.stdout
+
+environment
+  tabular_data
+    tabular_data_file = 'process_param_study.dat'
+
+# Multidimensional parameter study
+# 8 partitions (9 points) in 2 dims, 81 points total
+method
+  multidim_parameter_study
+    partitions = 4 4 4
+
+model
+  single
+
+variables
+  continuous_design = 3
+    lower_bounds      5.0      5.0    8.0
+    upper_bounds      6.0      20.0   9.0
+    descriptors       'bt'     'te'   'rmajor'
+
+interface
+  fork
+    analysis_drivers = 'python process_driver.py'
+    parameters_file = 'params.in'
+    results_file    = 'responses.out'
+      file_save
+    work_directory named "runs/run"
+      directory_tag directory_save
+      link_files = "run_dir_template/*"
+    deactivate active_set_vector
+
+responses
+  # descriptors "obj_func" "rms_vio_constr_res" ...
+  response_functions = 28
+  # Can include constraints here
+  # No derivatives needed for parameter study
+  no_gradients
+  no_hessians

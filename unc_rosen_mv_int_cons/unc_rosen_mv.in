@@ -1,0 +1,50 @@
+# Dakota Input File: unc_rosen.in
+# Usage:
+#   dakota -i unc_rosen_c1_mv.in -o unc_rosen_c1_mv.txt
+# Single uncertainty on constraint 1, mean value reliability analysis.
+
+environment
+  # HDF5 output
+  results_output
+    # Responses not in h5 output! Use -o option instead: only thing that contains results!
+    # hdf5 
+    # text Doesn't work either: blank!
+    results_output_file "responses"
+
+# Local reliability study
+method
+  local_reliability
+    # mpp_search no_approx
+    # Are constraints > 0?
+    response_levels = -2.0 : 1.0 : 6.0
+    #num_response_levels = 0 9 0
+
+variables
+  # continuous_interval_uncertain = 2 # appears to not be supported: weird error
+  # wants "continous variables"
+  uniform_uncertain = 2
+    lower_bounds      -0.1 -0.4
+    upper_bounds      0.4  0.4
+    descriptors       "e1" "e2"
+
+# Define interface to Rosenbrock script
+interface
+  fork
+    labeled
+    analysis_drivers = 'python unc_rosen_driver.py'
+    parameters_file = 'params.in'
+    results_file    = 'responses.out'
+    work_directory named "runs/run"
+      directory_tag directory_save # Keep individual run dirs
+      file_save # save Dakota .in and .out files
+      link_files = "run_dir_template/*"
+    # deactivate active_set_vector # Always request full data
+
+responses
+  response_functions = 1
+  descriptors "cons"
+  numerical_gradients
+    method_source dakota
+    interval_type central
+    fd_step_size = 1.e-4
+  no_hessians

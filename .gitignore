@@ -1,0 +1,16 @@
+runs/
+workdir*/
+*.dat
+*.rst
+*.in.*
+*.out.*
+*.log
+*.h5
+.ipynb_checkpoints/
+*.DAT
+!*IN.DAT
+*SIG_TF.json
+*.dat.sav
+*.out
+*.txt
+__pycache__/

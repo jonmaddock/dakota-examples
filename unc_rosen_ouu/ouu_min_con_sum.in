@@ -1,0 +1,128 @@
+# OUU example: minimise the mean of the sum of constraints under uncertainty
+
+# Dakota Input File: unc_rosen_ouu.in
+# Usage:
+#   dakota -i unc_rosen_ouu.in -o unc_rosen_ouu.out
+# Might require > outfile.out (not everything always in outfile otherwise)
+
+environment
+  # Define which method leads the study
+  top_method_pointer = 'OPTIM'
+  # HDF5 output
+  results_output
+    # Responses not in h5 output! Use -o option instead: only thing that contains results!
+    # hdf5 
+    # text Doesn't work either: blank!
+    results_output_file "responses"
+
+#######################################
+# Outer optimisation
+#######################################
+method
+  id_method = "OPTIM"
+  # Requires licence
+  # npsol_sqp
+  conmin_mfd
+    convergence_tolerance = 1.e-1
+    model_pointer = 'OPTIM_M'
+
+model
+  id_model = 'OPTIM_M'
+  nested
+    sub_method_pointer = 'UQ'
+    # What inner vars the outer vars map to
+    # i.e. first outer var maps to "x"
+    primary_variable_mapping = "x" "y"
+    # secondary_variable_mapping corresponds to type of primary variable (e.g. mean, std, etc.)
+    # Not required if not a distribution
+    
+    primary_response_mapping =  1. 0. 0.
+    # secondary_response_mapping = "x" "y"
+  variables_pointer  = 'OPTIM_V'
+  responses_pointer  = 'OPTIM_R'
+
+# Design variables
+variables
+  id_variables = 'OPTIM_V'
+  continuous_design = 2
+    initial_point    -0.5   -0.5
+    upper_bounds     2.0    3.0
+    lower_bounds     -2.0   -1.0
+    descriptors      "x"    "y"
+
+responses
+  id_responses = 'OPTIM_R'
+  # Unconstrained opt: minimise constraint sum
+  objective_functions = 1
+  
+  # Is this the reliability measure?
+  # Feasible constraint sum?
+  # nonlinear_inequality_constraints = 1
+    # upper_bounds = 0.0
+  
+  numerical_gradients
+    method_source dakota
+    interval_type central
+    fd_step_size = 1.e-1
+  no_hessians
+
+#######################################
+# Inner UQ
+#######################################
+# Local reliability study
+method
+  id_method = "UQ"
+  local_reliability
+    model_pointer = "UQ_M"
+    # mpp_search no_approx
+    # Calculate probability of constraint sum <= 0
+    response_levels = 0.0
+    # num_response_levels = 0 9 0
+
+model
+  id_model = "UQ_M"
+  single
+    interface_pointer = "UQ_I"
+  variables_pointer = "UQ_V"
+  responses_pointer = "UQ_R"
+
+variables
+  id_variables = "UQ_V"
+  # continuous_interval_uncertain = 2 # appears to not be supported: weird error
+  # wants "continous variables"
+  
+  # Design vars from outer optimisation
+  continuous_design = 2
+    descriptors = "x" "y"
+  
+  # Uncertain vars only in inner reliability study
+  uniform_uncertain = 2
+    lower_bounds      -0.1 -0.4
+    upper_bounds      0.4  0.4
+    descriptors       "e1" "e2"
+
+# Define interface to Rosenbrock script
+interface
+  id_interface = "UQ_I"
+  fork
+    labeled
+    analysis_drivers = 'python unc_rosen_driver.py'
+    parameters_file = 'params.in'
+    results_file    = 'responses.out'
+    work_directory named "runs/run"
+      # directory_tag directory_save # Keep individual run dirs
+      # file_save # save Dakota .in and .out files
+      link_files = "run_dir_template/*"
+    # Always request full data
+    # deactivate active_set_vector 
+
+responses
+  id_responses = "UQ_R"
+  response_functions = 1
+  # Sum of constraints
+  descriptors "cons"
+  numerical_gradients
+    method_source dakota
+    interval_type central
+    fd_step_size = 1.e-4
+  no_hessians
