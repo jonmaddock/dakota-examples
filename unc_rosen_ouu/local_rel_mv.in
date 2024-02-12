@@ -18,9 +18,10 @@ method
   local_reliability
     # mpp_search no_approx
     # Are constraints > 0?
-    #response_levels = -2.0 : 1.0 : 6.0
-    #num_response_levels = 0 9 0
-    response_levels = 0.0 0.0
+    # Only want CDF for constraints (ignore obj_func)
+    response_levels = -16.0 : 1.0 : 40.0
+    num_response_levels = 0 57
+    # response_levels = 0.0 0.0
 
 variables
   # continuous_interval_uncertain = 2 # appears to not be supported: weird error
@@ -28,7 +29,10 @@ variables
   
   # Design vars from outer optimisation
   continuous_design = 2
-    initial_point = 6.2757463313e-02 8.0411825874e-03
+    # Design variables at which to perform local reliability analysis
+    # initial_point = 1.0 1.0 # solution
+    initial_point = -1.0 1.0 # safe
+    # initial_point = 1.5 2.0 # dangerous
     descriptors = "x" "y"
 
   uniform_uncertain = 2
